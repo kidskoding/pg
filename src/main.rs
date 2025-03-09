@@ -1,22 +1,21 @@
 pub mod users;
 
-extern crate hex;
+use axum::{routing::get, Router};
 use pg::db;
-use users::{user::User, user_mgmt::{add_user, get_user}};
 
-fn main() -> Result<(), postgres::Error> {
-    let mut db = db::connect()?;
+#[tokio::main]
+async fn main() -> Result<(), tokio_postgres::Error> {
+    let app = Router::new()
+        .route("/", get(|| async {"Hello, World!"}));
+    let db = db::connect().await?;
 
-    let demo_user = User::new(
-        "Ferris".to_string(),
-        "ferristhecrab@gmail.com".to_string(),
-        "rustacean".to_string(),
-    );
+    let listener = tokio::net::TcpListener::bind("localhost:3000")
+        .await
+        .unwrap();
 
-    add_user(&mut db, &demo_user)?;
-
-    let user = get_user(&mut db, "Ferris")?.unwrap();
-    println!("User {} found: {}", user.username, user);
+    axum::serve(listener, app)
+        .await
+        .unwrap();
 
     Ok(())
 }
