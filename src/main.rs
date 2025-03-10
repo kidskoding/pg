@@ -1,6 +1,9 @@
 use std::sync::Arc;
-use axum::{routing::get, Router};
-use pg::{db::{self, AppState}, routes::user_routes::get_users_handler};
+use axum::{routing::{get, post}, Router};
+use pg::{
+    db::{self, AppState},
+    routes::user_routes::{add_user_handler, get_user_handler, get_users_handler}
+};
 
 #[tokio::main]
 async fn main() -> Result<(), tokio_postgres::Error> {
@@ -11,8 +14,10 @@ async fn main() -> Result<(), tokio_postgres::Error> {
     });
 
     let app = Router::new()
-        .route("/", get(|| async {"Hello, World!"}))
+        .route("/", get(|| async {"A Postgres Demo backend powered by tokio and axum!"}))
         .route("/users", get(get_users_handler))
+        .route("/users/{username}", get(get_user_handler))
+        .route("/users", post(add_user_handler))
         .with_state(state);
 
     let listener =
@@ -20,7 +25,7 @@ async fn main() -> Result<(), tokio_postgres::Error> {
             .await
             .unwrap();
 
-    println!("Server running on http://localhost:3000");
+    println!("Server is running on http://localhost:3000");
 
     axum::serve(listener, app)
         .await

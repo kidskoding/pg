@@ -2,18 +2,17 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct User {
+pub struct UserResponse {
     pub username: String,
     pub email: String,
-    pub password: String,
 }
 
-impl Display for User {
+impl Display for UserResponse {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "User {{ username: {}, email: {}, password: {} }}",
-            self.username, self.email, self.password
+            "User {{ username: {}, email: {} }}",
+            self.username, self.email
         )
     }
 }

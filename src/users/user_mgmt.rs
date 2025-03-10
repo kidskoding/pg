@@ -1,33 +1,34 @@
 use std::sync::Arc;
+use sha2::{Sha256, Digest};
 use tokio_postgres::Client;
-use super::user::User;
+use super::{user::User, user_response::UserResponse};
 
 pub async fn add_user(db: Arc<Client>, user: &User) -> Result<(), tokio_postgres::Error> {
+    let mut hasher: Sha256 = Sha256::new();
+    hasher.update(user.password.as_bytes());
+    let hashed_password = hex::encode(hasher.finalize());
+
     db.execute(
-        "INSERT INTO users (username, email, password, password_hash) VALUES ($1, $2, $3, $4)",
-        &[&user.username, &user.email, &user.password, &user.hashed_password],
+        "INSERT INTO users (username, email, hashed_password) VALUES ($1, $2, $3)",
+        &[&user.username, &user.email, &hashed_password],
     ).await?;
 
     Ok(())
 }
 
-pub async fn get_user(db: Arc<Client>, username: &str) -> Result<Option<User>, tokio_postgres::Error> {
+pub async fn get_user(db: Arc<Client>, username: &str)
+    -> Result<Option<UserResponse>, tokio_postgres::Error> {
+
     for row in db.query(
         "SELECT * FROM users",
         &[],
     ).await? {
         if row.get::<_, &str>(1) == username {
-            let (email, password, password_hash)
-                = (row.get::<_, &str>(2), row.get::<_, &str>(3), row.get::<_, &str>(4));
+            let email = row.get::<_, &str>(2);
 
-            println!("found person: {}", username);
-            println!("email: {}, password (hashed): {}", email, password_hash);
-
-            let user = Some(User {
+            let user = Some(UserResponse {
                 username: username.to_string(),
                 email: email.to_string(),
-                password: password.to_string(),
-                hashed_password: password_hash.to_string(),
             });
 
             return Ok(user);
@@ -37,25 +38,23 @@ pub async fn get_user(db: Arc<Client>, username: &str) -> Result<Option<User>, t
     Ok(None)
 }
 
-pub async fn get_users(db: Arc<Client>) -> Result<Vec<User>, tokio_postgres::Error> {
+pub async fn get_users(db: Arc<Client>)
+    -> Result<Vec<UserResponse>, tokio_postgres::Error> {
+
     let mut users = Vec::new();
 
     for row in db.query(
         "SELECT * FROM users",
         &[],
     ).await? {
-        let (username, email, password, password_hash) = (
+        let (username, email) = (
             row.get::<_, &str>(1),
             row.get::<_, &str>(2),
-            row.get::<_, &str>(3),
-            row.get::<_, &str>(4)
         );
 
-        let user = User {
+        let user = UserResponse {
             username: username.to_string(),
             email: email.to_string(),
-            password: password.to_string(),
-            hashed_password: password_hash.to_string(),
         };
 
         users.push(user);
