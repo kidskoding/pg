@@ -1,6 +1,8 @@
 use std::fmt::Display;
+use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
+#[derive(Debug, Serialize, Deserialize)]
 pub struct User {
     pub username: String,
     pub email: String,
