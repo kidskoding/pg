@@ -17,3 +17,13 @@ impl Display for User {
         )
     }
 }
+
+impl User {
+    pub fn new(username: String, email: String, password: String) -> Self {
+        User {
+            username,
+            email,
+            password,
+        }
+    }
+}

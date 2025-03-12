@@ -33,6 +33,9 @@ pub async fn add_user_handler(
 ) -> impl IntoResponse {
     match add_user(Arc::clone(&state.db), &user).await {
         Ok(_) => StatusCode::CREATED.into_response(),
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR.into_response(),
+        Err(e) => {
+            eprintln!("Error adding user: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
     }
 }
