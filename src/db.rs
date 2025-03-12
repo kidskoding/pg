@@ -1,3 +1,4 @@
+extern crate tokio;
 use std::sync::Arc;
 use tokio_postgres::{Client, NoTls};
 

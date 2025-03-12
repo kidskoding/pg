@@ -1,35 +1,35 @@
-use std::sync::Arc;
-use axum::{routing::{get, post}, Router};
-use pg::{
-    db::{self, AppState},
-    routes::user_routes::{add_user_handler, get_user_handler, get_users_handler}
-};
+use clap::{Parser, Subcommand};
+use pg::{client::run_client, server::run_server};
+
+#[derive(Parser)]
+#[command(version, about, long_about = None)]
+struct Args {
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+#[derive(Subcommand)]
+enum Commands {
+    Server,
+    Client,
+}
 
 #[tokio::main]
-async fn main() -> Result<(), tokio_postgres::Error> {
-    let db = db::connect().await?;
-    let db = Arc::new(db);
-    let state = Arc::new(AppState {
-        db
-    });
-
-    let app = Router::new()
-        .route("/", get(|| async {"A Postgres Demo backend powered by tokio and axum!"}))
-        .route("/users", get(get_users_handler))
-        .route("/users/{username}", get(get_user_handler))
-        .route("/users", post(add_user_handler))
-        .with_state(state);
-
-    let listener =
-        tokio::net::TcpListener::bind("localhost:3000")
-            .await
-            .unwrap();
-
-    println!("Server is running on http://localhost:3000");
-
-    axum::serve(listener, app)
-        .await
-        .unwrap();
+async fn main() -> Result<(), String> {
+    let args = Args::parse();
+    match args.command {
+        Some(Commands::Server) => {
+            run_server()
+                .await
+                .unwrap();
+        }
+        Some(Commands::Client) => {
+            run_client()
+                .await
+                .unwrap();
+        }
+        None => return Err("No command provided".to_string()),
+    }
 
     Ok(())
 }

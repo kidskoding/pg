@@ -1,2 +1,3 @@
 # pg
-a Rust postgres backend demonstration, powered by tokio and axum
+a powerful demonstration of a headless application
+using postgres with a Rust backend, powered by tokio and axum
