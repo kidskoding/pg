@@ -3,11 +3,12 @@ use reqwest::Client;
 use serde_json::Value;
 use crate::users::{user::User, user_response::UserResponse};
 
-async fn make_get_request(endpoint: &str) -> Result<Vec<UserResponse>, Box<dyn std::error::Error>> {
+async fn make_get_request(endpoint: &str) -> Result<String, Box<dyn std::error::Error>> {
     let response = reqwest::get(format!("http://{}", endpoint))
         .await?;
 
-    if !response.status().is_success() {
+    let status = response.status();
+    if !status.is_success() {
         return Err(format!("Request failed with status: {}", response.status()).into());
     }
 
@@ -16,10 +17,10 @@ async fn make_get_request(endpoint: &str) -> Result<Vec<UserResponse>, Box<dyn s
 
     if json_value.is_array() {
         let users: Vec<UserResponse> = serde_json::from_str(&body)?;
-        Ok(users)
+        Ok(format!("{} - {:?}", status, users))
     } else if json_value.is_object() {
         let user: UserResponse = serde_json::from_str(&body)?;
-        Ok(vec![user])
+        Ok(format!("{} - {:?}", status, user))
     } else {
         Err("Invalid response format".into())
     }
@@ -38,10 +39,10 @@ async fn make_post_request(endpoint: &str, data: &User) -> Result<String, Box<dy
     let body = response.text().await?;
 
     if status != reqwest::StatusCode::CREATED {
-        return Err(format!("Failed to create user: {} {}", status, body).into());
+        return Err(format!("{} - Failed to create user: {}", status, body).into());
     }
 
-    Ok("User created successfully".to_string())
+    Ok(format!("{} - User created successfully", status))
 }
 
 pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
@@ -73,7 +74,7 @@ pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
             "GET" => {
                 let response = make_get_request(endpoint)
                     .await?;
-                println!("GET {}: {:?}", endpoint, response);
+                println!("GET {}: {}", endpoint, response);
             }
             "POST" => {
                 println!("Please input your data");
