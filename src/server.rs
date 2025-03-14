@@ -1,8 +1,8 @@
 use std::sync::Arc;
-use axum::{routing::{get, post}, Router};
+use axum::{routing::{get, post, put}, Router};
 use crate::{
     db::{self, AppState},
-    routes::user_routes::{add_user_handler, get_user_handler, get_users_handler}
+    routes::user_routes::{add_user_handler, get_user_handler, get_users_handler, update_user_handler}
 };
 
 pub async fn run_server() -> Result<(), tokio_postgres::Error> {
@@ -15,6 +15,7 @@ pub async fn run_server() -> Result<(), tokio_postgres::Error> {
         .route("/users", get(get_users_handler))
         .route("/users/{username}", get(get_user_handler))
         .route("/users", post(add_user_handler))
+        .route("/users/{username}", put(update_user_handler))
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("localhost:3000")

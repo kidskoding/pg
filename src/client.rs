@@ -45,6 +45,25 @@ async fn make_post_request(endpoint: &str, data: &User) -> Result<String, Box<dy
     Ok(format!("{} - User created successfully", status))
 }
 
+async fn make_put_request(endpoint: &str, data: &User) -> Result<String, Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let url = format!("http://{}", endpoint);
+
+    let response = client.put(url)
+        .json(&data)
+        .send()
+        .await?;
+
+    let status = response.status();
+    let body = response.text().await?;
+
+    if status != reqwest::StatusCode::OK {
+        return Err(format!("{} - Failed to update user: {}", status, body).into());
+    }
+
+    Ok(format!("{} - User updated successfully", status))
+}
+
 pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
     println!("Input your HTTP requests!");
     println!("An HTTP request should be in the format: <HTTP_METHOD> <ENDPOINT>");
@@ -102,6 +121,33 @@ pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
                 let response = make_post_request(endpoint, &user)
                     .await?;
                 println!("POST {}: {}", endpoint, response);
+            }
+            "PUT" => {
+                println!("Please input your data");
+                println!("Data should be in the format: username email password");
+                let mut info = String::new();
+
+                io::stdin()
+                    .read_line(&mut info)
+                    .expect("failed to read line");
+
+                info = info.trim().parse::<String>()?;
+
+                let vec: Vec<&str> = info.split_whitespace().collect();
+                if vec.len() != 3 {
+                    println!("Invalid input please try again. Please input a username, email, and password");
+                    continue;
+                }
+
+                let user = User::new(
+                    vec[0].to_string(),
+                    vec[1].to_string(),
+                    vec[2].to_string()
+                );
+
+                let response = make_put_request(endpoint, &user)
+                    .await?;
+                println!("PUT {}: {}", endpoint, response);
             }
             _ => {
                 eprintln!("Invalid HTTP request");

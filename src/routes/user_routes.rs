@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use axum::{extract::{Path, State}, http::StatusCode, response::IntoResponse, Json};
-use crate::{db::AppState, users::{user::User, user_mgmt::{add_user, get_user, get_users}}};
+use crate::{db::AppState, users::{user::User, user_mgmt::{add_user, get_user, get_users, update_user}}};
 
 pub async fn get_users_handler(
     State(state): State<Arc<AppState>>,
@@ -35,6 +35,28 @@ pub async fn add_user_handler(
         Ok(_) => StatusCode::CREATED.into_response(),
         Err(e) => {
             eprintln!("Error adding user: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn update_user_handler(
+    State(state): State<Arc<AppState>>,
+    Path(username): Path<String>,
+    Json(user): Json<User>,
+) -> impl IntoResponse {
+    match update_user(Arc::clone(&state.db), &user).await {
+        Ok(user_response) => {
+            if username != user_response.username {
+                (StatusCode::SEE_OTHER, [("Location", format!(
+                    "/users/{}", user_response.username))])
+                .into_response()
+            } else {
+                Json(user_response).into_response()
+            }
+        }
+        Err(e) => {
+            eprintln!("Error updating user: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }

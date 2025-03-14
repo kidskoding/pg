@@ -62,3 +62,22 @@ pub async fn get_users(db: Arc<Client>)
 
     Ok(users)
 }
+
+pub async fn update_user(
+    db: Arc<Client>,
+    user: &User
+) -> Result<UserResponse, tokio_postgres::Error> {
+    let mut hasher: Sha256 = Sha256::new();
+    hasher.update(user.password.as_bytes());
+    let hashed_password = hex::encode(hasher.finalize());
+
+    db.execute(
+        "UPDATE users SET email = $1, hashed_password = $2 WHERE username = $3",
+        &[&user.email, &hashed_password, &user.username],
+    ).await?;
+
+    Ok(UserResponse {
+        username: user.username.clone(),
+        email: user.email.clone(),
+    })
+}
