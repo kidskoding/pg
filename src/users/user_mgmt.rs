@@ -81,3 +81,15 @@ pub async fn update_user(
         email: user.email.clone(),
     })
 }
+
+pub async fn delete_user(
+    db: Arc<Client>,
+    username: &str,
+) -> Result<(), tokio_postgres::Error> {
+    db.execute(
+        "DELETE FROM users WHERE username = $1",
+        &[&username],
+    ).await?;
+
+    Ok(())
+}

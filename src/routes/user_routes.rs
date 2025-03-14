@@ -1,6 +1,6 @@
 use std::sync::Arc;
 use axum::{extract::{Path, State}, http::StatusCode, response::{IntoResponse, Redirect}, Json};
-use crate::{db::AppState, users::{user::User, user_mgmt::{add_user, get_user, get_users, update_user}}};
+use crate::{db::AppState, users::{user::User, user_mgmt::{add_user, delete_user, get_user, get_users, update_user}}};
 
 pub async fn get_users_handler(
     State(state): State<Arc<AppState>>,
@@ -56,6 +56,20 @@ pub async fn update_user_handler(
         }
         Err(e) => {
             eprintln!("Error updating user: {:?}", e);
+            StatusCode::INTERNAL_SERVER_ERROR.into_response()
+        }
+    }
+}
+
+pub async fn delete_user_handler(
+    State(state): State<Arc<AppState>>,
+    Path(username): Path<String>,
+    Json(user): Json<User>,
+) -> impl IntoResponse {
+    match delete_user(Arc::clone(&state.db), &username).await {
+        Ok(_) => StatusCode::NO_CONTENT.into_response(),
+        Err(e) => {
+            eprintln!("Error deleting user: {:?}", e);
             StatusCode::INTERNAL_SERVER_ERROR.into_response()
         }
     }
