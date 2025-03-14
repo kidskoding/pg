@@ -27,6 +27,7 @@ pub async fn get_user_handler(
     }
 }
 
+// test comment
 pub async fn add_user_handler(
     State(state): State<Arc<AppState>>,
     Json(user): Json<User>,
