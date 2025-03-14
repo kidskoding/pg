@@ -64,6 +64,24 @@ async fn make_put_request(endpoint: &str, data: &User) -> Result<String, Box<dyn
     Ok(format!("{} - User updated successfully", status))
 }
 
+async fn make_delete_request(endpoint: &str) -> Result<String, Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let url = format!("http://{}", endpoint);
+
+    let response = client.delete(url)
+        .send()
+        .await?;
+
+    let status = response.status();
+    let body = response.text().await?;
+
+    if status != reqwest::StatusCode::NO_CONTENT {
+        return Err(format!("{} - Failed to delete user: {}", status, body).into());
+    }
+
+    Ok(format!("{} - User deleted successfully", status))
+}
+
 pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
     println!("Input your HTTP requests!");
     println!("An HTTP request should be in the format: <HTTP_METHOD> <ENDPOINT>");
@@ -148,6 +166,11 @@ pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
                 let response = make_put_request(endpoint, &user)
                     .await?;
                 println!("PUT {}: {}", endpoint, response);
+            }
+            "DELETE" => {
+                let response = make_delete_request(endpoint)
+                    .await?;
+                println!("DELETE {}: {}", endpoint, response);
             }
             _ => {
                 eprintln!("Invalid HTTP request");
