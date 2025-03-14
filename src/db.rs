@@ -1,5 +1,6 @@
 extern crate tokio;
 use std::sync::Arc;
+use color_eyre::eyre::Result;
 use tokio_postgres::{Client, NoTls};
 
 #[derive(Clone)]
@@ -7,7 +8,7 @@ pub struct AppState {
     pub db: Arc<Client>,
 }
 
-pub async fn connect() -> Result<Client, tokio_postgres::Error> {
+pub async fn connect() -> Result<Client> {
     let (client, connection) =
         tokio_postgres::connect(
             "host=localhost user=anirudh",

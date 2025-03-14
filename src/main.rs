@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use color_eyre::eyre::{eyre, Result};
 use pg::{client::run_client, server::run_server};
 
 #[derive(Parser)]
@@ -15,20 +16,20 @@ enum Commands {
 }
 
 #[tokio::main]
-async fn main() -> Result<(), String> {
+async fn main() -> Result<()> {
+    color_eyre::install()?;
+
     let args = Args::parse();
     match args.command {
         Some(Commands::Server) => {
             run_server()
-                .await
-                .unwrap();
+                .await?;
         }
         Some(Commands::Client) => {
             run_client()
-                .await
-                .unwrap();
+                .await?;
         }
-        None => return Err("No command provided".to_string()),
+        None => return Err(eyre!("No command provided".to_string())),
     }
 
     Ok(())

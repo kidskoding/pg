@@ -1,15 +1,16 @@
 use std::io;
 use reqwest::Client;
 use serde_json::Value;
+use color_eyre::eyre::{eyre, Result};
 use crate::users::{user::User, user_response::UserResponse};
 
-async fn make_get_request(endpoint: &str) -> Result<String, Box<dyn std::error::Error>> {
+async fn make_get_request(endpoint: &str) -> Result<String> {
     let response = reqwest::get(format!("http://{}", endpoint))
         .await?;
 
     let status = response.status();
     if !status.is_success() {
-        return Err(format!("Request failed with status: {}", response.status()).into());
+        return Err(eyre!("Request failed with status: {}", response.status()).into());
     }
 
     let body = response.text().await?;
@@ -22,11 +23,11 @@ async fn make_get_request(endpoint: &str) -> Result<String, Box<dyn std::error::
         let user: UserResponse = serde_json::from_str(&body)?;
         Ok(format!("{} - {:?}", status, user))
     } else {
-        Err("Invalid response format".into())
+        Err(eyre!("Invalid response format"))
     }
 }
 
-async fn make_post_request(endpoint: &str, data: &User) -> Result<String, Box<dyn std::error::Error>> {
+async fn make_post_request(endpoint: &str, data: &User) -> Result<String> {
     let client = Client::new();
     let url = format!("http://{}", endpoint);
 
@@ -39,13 +40,13 @@ async fn make_post_request(endpoint: &str, data: &User) -> Result<String, Box<dy
     let body = response.text().await?;
 
     if status != reqwest::StatusCode::CREATED {
-        return Err(format!("{} - Failed to create user: {}", status, body).into());
+        return Err(eyre!("{} - Failed to create user: {}", status, body).into());
     }
 
     Ok(format!("{} - User created successfully", status))
 }
 
-async fn make_put_request(endpoint: &str, data: &User) -> Result<String, Box<dyn std::error::Error>> {
+async fn make_put_request(endpoint: &str, data: &User) -> Result<String> {
     let client = Client::new();
     let url = format!("http://{}", endpoint);
 
@@ -58,13 +59,31 @@ async fn make_put_request(endpoint: &str, data: &User) -> Result<String, Box<dyn
     let body = response.text().await?;
 
     if status != reqwest::StatusCode::OK {
-        return Err(format!("{} - Failed to update user: {}", status, body).into());
+        return Err(eyre!("{} - Failed to update user: {}", status, body).into());
     }
 
     Ok(format!("{} - User updated successfully", status))
 }
 
-pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
+async fn make_delete_request(endpoint: &str) -> Result<String> {
+    let client = Client::new();
+    let url = format!("http://{}", endpoint);
+
+    let response = client.delete(url)
+        .send()
+        .await?;
+
+    let status = response.status();
+    let body = response.text().await?;
+
+    if status != reqwest::StatusCode::NO_CONTENT {
+        return Err(eyre!("{} - Failed to delete user: {}", status, body).into());
+    }
+
+    Ok(format!("{} - User deleted successfully", status))
+}
+
+pub async fn run_client() -> Result<()> {
     println!("Input your HTTP requests!");
     println!("An HTTP request should be in the format: <HTTP_METHOD> <ENDPOINT>");
 
@@ -148,6 +167,11 @@ pub async fn run_client() -> Result<(), Box<dyn std::error::Error>> {
                 let response = make_put_request(endpoint, &user)
                     .await?;
                 println!("PUT {}: {}", endpoint, response);
+            }
+            "DELETE" => {
+                let response = make_delete_request(endpoint)
+                    .await?;
+                println!("DELETE {}: {}", endpoint, response);
             }
             _ => {
                 eprintln!("Invalid HTTP request");

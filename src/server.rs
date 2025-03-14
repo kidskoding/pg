@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use axum::{routing::{delete, get, post, put}, Router};
+use color_eyre::eyre::Result;
 use crate::{
     db::{self, AppState},
     routes::user_routes::{
@@ -7,7 +8,7 @@ use crate::{
     }
 };
 
-pub async fn run_server() -> Result<(), tokio_postgres::Error> {
+pub async fn run_server() -> Result<()> {
     let db = db::connect().await.unwrap();
     let db = Arc::new(db);
     let state = Arc::new(AppState { db });
@@ -22,14 +23,12 @@ pub async fn run_server() -> Result<(), tokio_postgres::Error> {
         .with_state(state);
 
     let listener = tokio::net::TcpListener::bind("localhost:3000")
-        .await
-        .unwrap();
+        .await?;
 
     println!("Server is running on http://localhost:3000");
 
     axum::serve(listener, app)
-        .await
-        .unwrap();
+        .await?;
 
     Ok(())
 }

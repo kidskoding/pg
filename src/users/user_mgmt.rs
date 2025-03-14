@@ -1,9 +1,10 @@
 use std::sync::Arc;
+use color_eyre::eyre::Result;
 use sha2::{Sha256, Digest};
 use tokio_postgres::Client;
 use super::{user::User, user_response::UserResponse};
 
-pub async fn add_user(db: Arc<Client>, user: &User) -> Result<(), tokio_postgres::Error> {
+pub async fn add_user(db: Arc<Client>, user: &User) -> Result<()> {
     let mut hasher: Sha256 = Sha256::new();
     hasher.update(user.password.as_bytes());
     let hashed_password = hex::encode(hasher.finalize());
@@ -17,7 +18,7 @@ pub async fn add_user(db: Arc<Client>, user: &User) -> Result<(), tokio_postgres
 }
 
 pub async fn get_user(db: Arc<Client>, username: &str)
-    -> Result<Option<UserResponse>, tokio_postgres::Error> {
+    -> Result<Option<UserResponse>> {
 
     for row in db.query(
         "SELECT * FROM users",
@@ -38,9 +39,7 @@ pub async fn get_user(db: Arc<Client>, username: &str)
     Ok(None)
 }
 
-pub async fn get_users(db: Arc<Client>)
-    -> Result<Vec<UserResponse>, tokio_postgres::Error> {
-
+pub async fn get_users(db: Arc<Client>) -> Result<Vec<UserResponse>> {
     let mut users = Vec::new();
 
     for row in db.query(
@@ -66,7 +65,7 @@ pub async fn get_users(db: Arc<Client>)
 pub async fn update_user(
     db: Arc<Client>,
     user: &User
-) -> Result<UserResponse, tokio_postgres::Error> {
+) -> Result<UserResponse> {
     let mut hasher: Sha256 = Sha256::new();
     hasher.update(user.password.as_bytes());
     let hashed_password = hex::encode(hasher.finalize());
