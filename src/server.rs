@@ -9,7 +9,7 @@ use crate::{
 };
 
 pub async fn run_server() -> Result<()> {
-    let db = db::connect().await.unwrap();
+    let db = db::connect().await?;
     let db = Arc::new(db);
     let state = Arc::new(AppState { db });
 
