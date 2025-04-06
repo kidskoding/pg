@@ -1,3 +1,2 @@
 # pg
-a powerful demonstration of a headless application
-using postgres with a Rust backend, powered by tokio, axum, reqwest, and clap
+a headless template application that demonstrates using Rust as a backend and postgres SQL to store users' username, email, and passwords
