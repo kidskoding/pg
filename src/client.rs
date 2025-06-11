@@ -29,7 +29,7 @@ async fn make_get_request(endpoint: &str) -> Result<String> {
 
 async fn make_post_request(endpoint: &str, data: &User) -> Result<String> {
     let client = Client::new();
-    let url = format!("http://{}", endpoint);
+    let url = format!("http://localhost:3000{}", endpoint);
 
     let response = client.post(url)
         .json(&data)
@@ -48,7 +48,7 @@ async fn make_post_request(endpoint: &str, data: &User) -> Result<String> {
 
 async fn make_put_request(endpoint: &str, data: &User) -> Result<String> {
     let client = Client::new();
-    let url = format!("http://{}", endpoint);
+    let url = format!("http://localhost:3000{}", endpoint);
 
     let response = client.put(url)
         .json(&data)
@@ -67,7 +67,7 @@ async fn make_put_request(endpoint: &str, data: &User) -> Result<String> {
 
 async fn make_delete_request(endpoint: &str) -> Result<String> {
     let client = Client::new();
-    let url = format!("http://{}", endpoint);
+    let url = format!("http://localhost:3000{}", endpoint);
 
     let response = client.delete(url)
         .send()

@@ -1,7 +1,8 @@
 use std::fmt::Display;
 use serde::{Deserialize, Serialize};
+use sqlx::prelude::FromRow;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize)]
 pub struct UserResponse {
     pub username: String,
     pub email: String,

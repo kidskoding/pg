@@ -1,25 +1,21 @@
 extern crate tokio;
-use std::sync::Arc;
+use std::{env, sync::Arc};
 use color_eyre::eyre::Result;
-use tokio_postgres::{Client, NoTls};
+use dotenv::dotenv;
+use sqlx::PgPool;
 
 #[derive(Clone)]
 pub struct AppState {
-    pub db: Arc<Client>,
+    pub db: Arc<PgPool>,
 }
 
-pub async fn connect() -> Result<Client> {
-    let (client, connection) =
-        tokio_postgres::connect(
-            "host=localhost user=anirudh",
-            NoTls
-        ).await?;
+pub async fn connect() -> Result<PgPool> {
+    dotenv().ok();
+    let url = env::var("DB_URL")
+        .expect("could not load the DB_URL in .env!");
 
-    tokio::spawn(async move {
-        if let Err(e) = connection.await {
-            eprintln!("connection error: {}", e);
-        }
-    });
+    let conn = PgPool::connect(&url)
+        .await?;
 
-    Ok(client)
+    Ok(conn)
 }

@@ -1,79 +1,58 @@
 use std::sync::Arc;
 use color_eyre::eyre::Result;
 use sha2::{Sha256, Digest};
-use tokio_postgres::Client;
+use sqlx::PgPool;
 use super::{user::User, user_response::UserResponse};
 
-pub async fn add_user(db: Arc<Client>, user: &User) -> Result<()> {
+pub async fn add_user(db: Arc<PgPool>, user: &User) -> Result<()> {
     let mut hasher: Sha256 = Sha256::new();
     hasher.update(user.password.as_bytes());
     let hashed_password = hex::encode(hasher.finalize());
 
-    db.execute(
-        "INSERT INTO users (username, email, hashed_password) VALUES ($1, $2, $3)",
-        &[&user.username, &user.email, &hashed_password],
-    ).await?;
+    sqlx::query("INSERT INTO users (username, email, hashed_password) VALUES ($1, $2, $3)")
+        .bind(&user.username)
+        .bind(&user.email)
+        .bind(&hashed_password)
+        .execute(db.as_ref())
+        .await?;
 
     Ok(())
 }
 
-pub async fn get_user(db: Arc<Client>, username: &str)
-    -> Result<Option<UserResponse>> {
-
-    for row in db.query(
-        "SELECT * FROM users",
-        &[],
-    ).await? {
-        if row.get::<_, &str>(1) == username {
-            let email = row.get::<_, &str>(2);
-
-            let user = Some(UserResponse {
-                username: username.to_string(),
-                email: email.to_string(),
-            });
-
-            return Ok(user);
-        }
-    }
-
-    Ok(None)
+pub async fn get_user(db: Arc<PgPool>, username: &str) -> Result<Option<UserResponse>> {
+    let user: Option<UserResponse> = sqlx::query_as(
+        "SELECT username, email FROM users WHERE username = $1"
+    )
+        .bind(username)
+        .fetch_optional(db.as_ref())
+        .await?;
+    
+    Ok(user)
 }
 
-pub async fn get_users(db: Arc<Client>) -> Result<Vec<UserResponse>> {
-    let mut users = Vec::new();
-
-    for row in db.query(
-        "SELECT * FROM users",
-        &[],
-    ).await? {
-        let (username, email) = (
-            row.get::<_, &str>(1),
-            row.get::<_, &str>(2),
-        );
-
-        let user = UserResponse {
-            username: username.to_string(),
-            email: email.to_string(),
-        };
-
-        users.push(user);
-    }
+pub async fn get_users(db: Arc<PgPool>) -> Result<Vec<UserResponse>> {
+    let users: Vec<UserResponse> = sqlx::query_as(
+        "SELECT username, email FROM users"
+    )
+        .fetch_all(db.as_ref())
+        .await?;
 
     Ok(users)
 }
 
-pub async fn update_user(
-    db: Arc<Client>,
-    user: &User
-) -> Result<UserResponse> {
+pub async fn update_user(db: Arc<PgPool>, user: &User) -> Result<UserResponse> {
     let mut hasher: Sha256 = Sha256::new();
     hasher.update(user.password.as_bytes());
     let hashed_password = hex::encode(hasher.finalize());
 
-    db.execute(
-        "UPDATE users SET email = $1, hashed_password = $2 WHERE username = $3",
-        &[&user.email, &hashed_password, &user.username],
-    ).await?;
+    sqlx::query(
+        "UPDATE users SET email = $1, hashed_password = $2 WHERE username = $3"
+    )
+        .bind(&user.email)
+        .bind(&hashed_password)
+        .bind(&user.username)
+        .execute(db.as_ref())
+        .await?;
 
     Ok(UserResponse {
         username: user.username.clone(),
@@ -81,14 +60,11 @@ pub async fn update_user(
     })
 }
 
-pub async fn delete_user(
-    db: Arc<Client>,
-    username: &str,
-) -> Result<(), tokio_postgres::Error> {
-    db.execute(
-        "DELETE FROM users WHERE username = $1",
-        &[&username],
-    ).await?;
+pub async fn delete_user(db: Arc<PgPool>, username: &str) -> Result<(), sqlx::Error> {
+    sqlx::query("DELETE FROM users WHERE username = $1")
+        .bind(&username)
+        .execute(db.as_ref())
+        .await?;
 
     Ok(())
 }
