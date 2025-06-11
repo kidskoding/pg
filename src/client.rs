@@ -5,7 +5,7 @@ use color_eyre::eyre::{eyre, Result};
 use crate::users::{user::User, user_response::UserResponse};
 
 async fn make_get_request(endpoint: &str) -> Result<String> {
-    let response = reqwest::get(format!("http://{}", endpoint))
+    let response = reqwest::get(format!("http://localhost:3000{}", endpoint))
         .await?;
 
     let status = response.status();
@@ -85,7 +85,13 @@ async fn make_delete_request(endpoint: &str) -> Result<String> {
 
 pub async fn run_client() -> Result<()> {
     println!("Input your HTTP requests!");
-    println!("An HTTP request should be in the format: <HTTP_METHOD> <ENDPOINT>");
+    println!("An HTTP request should be in the format: <HTTP_METHOD> <ENDPOINT>\n");
+    println!("Available Endpoints:");
+    println!("GET /users - Get all registered users");
+    println!("GET /users/[username] - Get the user with the given username");
+    println!("POST /users - Create a new username email and password");
+    println!("PUT /users/[username] - Update the user with the given username, email, and password");
+    println!("DELETE /users/[username] - Delete the user\n");
 
     loop {
         let mut input = String::new();
